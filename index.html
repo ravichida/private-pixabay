@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Large Images</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <style>
+        /* Use below media queries to set CSS for blow screen widths */
+        @media screen and (max-width: 1020px) {}
+
+        @media screen and (max-width: 780px) {}
+
+        @media screen and (max-width: 480px) {}
+
+        #imagesCarousel .carousel-inner {
+            min-height: 30px;
+        }
+
+        #imagesCarousel .carousel-image {
+            background-position: center;
+        }
+
+        #imagesCarousel figcaption {
+            width: 100%;
+            display: inline-block;
+            position: relative;
+            left: 0;
+            top: 0;
+            background-color: black;
+            padding: .5rem;
+            text-align: center;
+            color: white;
+            text-transform: capitalize;
+        }
+
+        #searchkey {
+            width: 95%;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container pt-2">
+        <div class="row">
+            <div class="col-sm-8 p-2 text-right">
+                <input type="text" name="searchkey" id="searchkey" class="searchkey p-2" placeholder="Search Images">
+            </div>
+            <div class="col-sm-4 p-2 text-center">
+                <button type="submit" class="btn btn-primary getImages" onclick="getImages()">Submit</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div id="imagesCarousel" class="carousel slide carousel-fade" data-ride="carousel">
+                    <div class="carousel-inner">
+                    </div>
+                    <a class="carousel-control-prev" href="#imagesCarousel" role="button" data-slide="prev">
+                        <span class="sr-only">Previous</span>
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    </a>
+                    <a class="carousel-control-next" href="#imagesCarousel" role="button" data-slide="next">
+                        <span class="sr-only">Next</span>
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <p id="data"></p>
+    </div>
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Popper JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#imagesCarousel').carousel({ interval: 1000 });
+        });
+    </script>
+    <script>
+        $(function () {
+            $(window).resize(function () {
+                $(".carousel-image").height(0.8 * $(window).height());
+            });
+        });
+    </script>
+    <script>
+        function getImages() {
+            const promise = new Promise((resolve, reject) => {
+                const str = $("#searchkey").val();
+                const strWithNoSpace = JSON.stringify(str.replace(/ /g, "+"));
+                const request = new XMLHttpRequest();
+                const API_KEY = '17121518-cbb0b74b8fd609e2a89987f74';
+                const URL = 'https://pixabay.com/api/?key=' + API_KEY + '&q=' + encodeURIComponent(strWithNoSpace);
+                request.open('GET', URL);
+                request.onload = () => {
+                    if (request.status === 200) {
+                        resolve(request.response); // we got data here, so resolve the Promise
+                    } else {
+                        reject(Error(request.statusText)); // status is not 200 OK, so reject
+                    }
+                };
+                request.onerror = () => {
+                    reject(Error('Error fetching data.')); // error occurred, reject the  Promise
+                };
+                request.send(); // send the request
+            });
+
+            console.log('Asynchronous request made.');
+
+            promise.then((data) => {
+                var DATA = JSON.parse(data);
+                setImages(DATA)
+                console.log('Got data! Promise fulfilled.');
+            }, (error) => {
+                showError(error);
+            });
+        }
+
+        function setImages(data) {
+            if (parseInt(data.totalHits) > 0) {
+                $.each(data.hits, function (i, hit) {
+                    if (hit.imageWidth > 1280) {
+                        $('<div class="carousel-item"><figure><div class="carousel-image" style="height: ' + (0.8 * $(window).height()) + 'px; background-image: url(' + hit.largeImageURL + ');"><figcaption>' + hit.tags + '</figcaption></figure></div>').appendTo('.carousel-inner');
+                    }
+                });
+                $('.carousel-item').first().addClass('active');
+            }
+        }
+        function showError(error) {
+            $('<div class="carousel-item"><h3 class="text-center">' + error.message + '</h3></div>').appendTo('.carousel-inner');
+            $('.carousel-item').first().addClass('active');
+        }
+    </script>
+</body>
+
+</html>
